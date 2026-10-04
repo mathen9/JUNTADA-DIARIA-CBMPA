@@ -1,0 +1,51 @@
+JUNTADA 9º GBM ALTAMIRA — APLICATIVO (PWA)
+
+O QUE É
+Um aplicativo que roda no navegador do celular e pode ser instalado na tela inicial.
+Os dados ficam salvos no próprio celular. Funciona sem internet depois da primeira abertura.
+
+COMO COLOCAR NO AR (escolha um, todos gratuitos)
+
+1) Netlify Drop (mais fácil, 2 minutos)
+   - No computador, abra https://app.netlify.com/drop
+   - Arraste esta pasta inteira (juntada9gbm-pwa) para a página.
+   - Ele gera um endereço https://...netlify.app. Crie uma conta grátis para o endereço não expirar.
+
+2) GitHub Pages
+   - Crie um repositório, envie os arquivos desta pasta, vá em Settings > Pages e publique a branch main.
+
+3) Cloudflare Pages
+   - Em pages.cloudflare.com, "Upload assets" e envie esta pasta.
+
+COMO INSTALAR NO CELULAR
+- Android (Chrome): abra o endereço > menu ⋮ > "Instalar aplicativo" (ou "Adicionar à tela inicial").
+- iPhone (Safari): abra o endereço > botão Compartilhar > "Adicionar à Tela de Início".
+
+IMPRIMIR AS FOLHAS
+- Guia "Folhas" > marque as folhas > "Imprimir / salvar PDF".
+- Escolha a impressora ou "Salvar como PDF", papel A4, orientação paisagem.
+
+SALVAMENTO
+- Grava no celular a cada alteração (o selo "Salvo HH:MM" no topo mostra a última gravação).
+- Guarda uma cópia de segurança a cada 10 minutos com alteração e antes de qualquer exclusão (até 40 versões).
+- Toque no selo "Salvo" para baixar o backup (.json), reabrir um backup ou voltar a uma versão anterior.
+
+ATUALIZAR O APP
+- Substitua os arquivos no mesmo endereço. Se mudar o sw.js, troque "juntada-v1" por "juntada-v2".
+- Os dados salvos no celular continuam, porque ficam ligados ao endereço do site.
+  Por isso, não troque de endereço depois de começar a usar (ou faça o backup antes).
+
+CÓPIA DIÁRIA DO PDF NUMA PASTA (computador com Chrome ou Edge)
+- Instale o app pelo Chrome/Edge do computador da guarda.
+- Engrenagem > "Cópia diária do PDF numa pasta" > Escolher pasta > permitir.
+- Quando o navegador perguntar, escolha "Permitir em todas as visitas" para não pedir de novo.
+- No horário escolhido (padrão 08:00) o app salva o PDF do serviço que terminou em
+  PASTA/AAAA-MM/Juntada 9GBM DD-MM-AAAA a DD-MM-AAAA.pdf
+- O app precisa estar aberto nesse horário. Se estiver fechado, ele salva quando for aberto.
+- No celular Android isso não existe; use "Compartilhar PDF" na guia Folhas.
+
+SENHA
+- Senha inicial: 0000. Troque em Engrenagem > Trocar senha.
+- Protege: efetivo e viaturas, guarnição de cada viatura, cópia diária (desligar, trocar pasta, horário),
+  horário da troca de serviço, zerar serviço, restaurar versões e reabrir backup.
+- Depois de digitar a senha, essas áreas ficam liberadas por 5 minutos.
