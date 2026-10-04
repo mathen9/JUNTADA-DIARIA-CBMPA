@@ -49,3 +49,16 @@ SENHA
 - Protege: efetivo e viaturas, guarnição de cada viatura, cópia diária (desligar, trocar pasta, horário),
   horário da troca de serviço, zerar serviço, restaurar versões e reabrir backup.
 - Depois de digitar a senha, essas áreas ficam liberadas por 5 minutos.
+
+BACKUP AUTOMÁTICO DOS DADOS (computador com Chrome ou Edge)
+- Na mesma pasta das cópias, o app cria a subpasta _backup com:
+  backup-juntada-ULTIMO.json  (sempre a cópia mais recente)
+  backup-juntada-AAAA-MM-DD.json  (uma por dia, guarda os últimos 30 dias)
+- Atualiza sozinho a cada 30 minutos quando há mudança.
+- Contém tudo: juntadas, efetivo, viaturas, guarnição de cada viatura, senha e configurações.
+- Se o navegador for limpo ou o computador trocado: abra o app, toque em "Restaurar backup"
+  na faixa amarela (ou Engrenagem > Restaurar da pasta), escolha a pasta de cópias e a data.
+- Proteção: o backup automático nunca grava por cima de um backup maior (com mais juntadas)
+  sem confirmação. Assim, um app vazio não apaga o backup bom.
+- Dica: deixe a pasta de cópias dentro do OneDrive/Google Drive do computador para ter
+  também uma cópia fora da máquina.

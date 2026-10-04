@@ -1212,6 +1212,55 @@ async function verificaAgenda(){if(!fsaOK()||!meta.pasta.ativo||agendaRodando)re
       else{if(r==="sem-permissao")permBar(true,D);break}}}
   finally{agendaRodando=false}}
 
+/* ---------- backup completo dos dados na pasta (_backup) ---------- */
+const temDados=d=>d&&((d.vtrs||[]).length||(d.pessoas||[]).length||(d.ronda||[]).length||(d.gu&&Object.values(d.gu).some(v=>String(v||"").trim())));
+const BK_RE=/^backup-juntada-(\d{4}-\d{2}-\d{2})\.json$/;
+async function montaBackup(){flush();const dias=(await todosDias()).filter(temDados);
+  return {app:"juntada9gbm",tipo:"backup-completo",v:1,criadoEm:new Date().toISOString(),atual:S.inicio,meta:JSON.parse(JSON.stringify(meta)),dias}}
+/* nunca sobrescreve um backup com menos juntadas do que o último (ex.: navegador limpo) sem confirmação */
+async function fazBackup(pedir,forcar){const h=await pegaDir();if(!h)return "sem-pasta";if(!await permissao(h,pedir))return "sem-permissao";
+  try{const j=await montaBackup();const dir=await h.getDirectoryHandle("_backup",{create:true});
+    if(!forcar){if(!j.dias.length)return "vazio";let ant=0;try{ant=(JSON.parse(await (await (await dir.getFileHandle("backup-juntada-ULTIMO.json")).getFile()).text()).dias||[]).length}catch(e){}
+      if(j.dias.length<ant){meta.pasta.bkMenor=ant;saveMeta();return "menor"}}
+    meta.pasta.bkMenor=0;const txt=JSON.stringify(j);
+    for(const nome of [`backup-juntada-${iso(new Date())}.json`,"backup-juntada-ULTIMO.json"]){const fh=await dir.getFileHandle(nome,{create:true});const w=await fh.createWritable();await w.write(txt);await w.close()}
+    const arqs=[];for await (const [n] of dir.entries())if(BK_RE.test(n))arqs.push(n);arqs.sort().reverse();
+    for(const n of arqs.slice(30)){try{await dir.removeEntry(n)}catch(e){}}
+    meta.pasta.bkAt=Date.now();meta.pasta.bkDias=j.dias.length;saveMeta();return "ok"}catch(e){return "erro"}}
+let bkRodando=false;
+async function backupAuto(){if(!fsaOK()||bkRodando)return;bkRodando=true;
+  try{const ult=meta.pasta.bkAt||0;const mudou=(S&&S.atualizadoEm||0)>ult;
+    if((mudou&&Date.now()-ult>=30*60*1000)||Date.now()-ult>=24*3600*1000){const r=await fazBackup(false);
+      if(r==="menor"&&$("#permBar").hidden){const b=$("#permBar");b.hidden=false;$("#permTxt").textContent=`O backup da pasta tem ${meta.pasta.bkMenor} juntadas e este aparelho tem menos. O backup automático foi pausado para não perder dados.`;$("#permOk").textContent="Ver backups";$("#permOk").dataset.modo="restaurar"}
+      if(r==="menor"||r==="vazio")meta.pasta.bkAt=Date.now()}}finally{bkRodando=false}}
+/* restaurar */
+async function aplicaBackup(j){if(!j||j.tipo!=="backup-completo"||!Array.isArray(j.dias))throw new Error("formato");
+  const pastaAtual=meta.pasta,temaAtual_=meta.tema;
+  Object.keys(meta).forEach(k=>delete meta[k]);Object.assign(meta,j.meta||{});
+  meta.pasta=Object.assign({},(j.meta&&j.meta.pasta)||{},{nome:pastaAtual.nome||((j.meta&&j.meta.pasta)||{}).nome||"",ativo:true,bkAt:Date.now()});
+  meta.exemplo=false;if(temaAtual_&&!meta.tema)meta.tema=temaAtual_;saveMeta();
+  LS.keys().filter(k=>k.startsWith("dia:")).forEach(k=>LS.del(k));
+  const lim=iso(addDays(new Date(),-60));
+  for(const d of j.dias){if(!d||!d.inicio)continue;if(d.inicio>=lim)LS.set("dia:"+d.inicio,JSON.stringify(d));if(idbOK){try{await IDB.put("dias",d)}catch(e){}}}
+  const atual=j.atual&&j.dias.some(d=>d.inicio===j.atual)?j.atual:(j.dias.map(d=>d.inicio).sort().pop()||defaultInicio());
+  LS.set("atual",atual);if(!getJSON("dia:"+atual,null)){const d=j.dias.find(x=>x.inicio===atual);if(d)LS.set("dia:"+atual,JSON.stringify(d))}
+  dirty=false;return j.dias.length}
+async function restauraDaPasta(){let h=await pegaDir();
+  if(!h||!await permissao(h,true)){try{h=await window.showDirectoryPicker({id:"juntadas",mode:"readwrite",startIn:"documents"});dirH=h;await IDB.put("cfg",h,"dir");meta.pasta.nome=h.name;saveMeta()}catch(e){return}}
+  let dir=h;if(h.name!=="_backup"){try{dir=await h.getDirectoryHandle("_backup")}catch(e){toast("Nenhum backup encontrado nessa pasta (falta a subpasta _backup).");return}}
+  const arqs=[];for await (const [n,e] of dir.entries())if(e.kind==="file"&&(BK_RE.test(n)||n==="backup-juntada-ULTIMO.json"))arqs.push({n,e});
+  arqs.sort((a,b)=>a.n==="backup-juntada-ULTIMO.json"?-1:b.n==="backup-juntada-ULTIMO.json"?1:b.n.localeCompare(a.n));
+  if(!arqs.length){toast("Nenhum backup encontrado na pasta.");return}
+  const info=await Promise.all(arqs.map(async a=>{const f=await a.e.getFile();return {...a,t:f.lastModified,kb:Math.max(1,Math.round(f.size/1024))}}));
+  openModal(`<header><h3>Restaurar backup</h3><button class="btn ghost" data-x>Fechar</button></header><div class="body">
+    <p class="note">Escolha a cópia. Ela substitui todos os dados deste aparelho: juntadas, efetivo, viaturas e configurações.</p>
+    <div class="hist">${info.map((a,i)=>`<div class="it"><span><b>${a.n==="backup-juntada-ULTIMO.json"?"Mais recente":esc(a.n.match(BK_RE)[1].split("-").reverse().join("/"))}</b><br><span class="hint">Gravado em ${esc(new Date(a.t).toLocaleString("pt-BR"))} · ${a.kb} KB</span></span><button class="btn small primary" data-bk="${i}">Restaurar</button></div>`).join("")}</div></div>`);
+  box.querySelector("[data-x]").onclick=closeModal;
+  box.querySelectorAll("[data-bk]").forEach(b=>b.onclick=async()=>{const a=info[+b.dataset.bk];let j;try{j=JSON.parse(await (await a.e.getFile()).text())}catch(e){toast("Arquivo de backup danificado.");return}
+    const vazio=!(await todosDias()).some(temDados);
+    const vai=()=>ask(`Restaurar ${j.dias.length} juntada${j.dias.length===1?"":"s"} gravada${j.dias.length===1?"":"s"} em ${new Date(j.criadoEm).toLocaleString("pt-BR")}?`,"Restaurar",async()=>{try{const n=await aplicaBackup(j);toast(`${n} juntada${n===1?"":"s"} restaurada${n===1?"":"s"}. Reabrindo…`);setTimeout(()=>location.reload(),900)}catch(e){toast("Não foi possível restaurar esse arquivo.")}});
+    vazio?vai():exigeSenha("Restaurar substitui os dados deste aparelho.",vai)})}
+
 /* ---------- dia de serviço ---------- */
 function setDayTxt(){const a=parseISO(S.inicio),b=addDays(a,1);$("#dayTxt").innerHTML=`${curto(a)} <small>→</small> ${curto(b)}`;
   const n=S.inicio===defaultInicio()?sentinelaEm(nowHM()):"";$("#sentNow").hidden=!n;$("#sentNow").parentNode.classList.toggle("com-sent",!!n);$("#sentTxt").textContent=n;$("#sentNow").title="De sentinela agora: "+n}
@@ -1227,7 +1276,7 @@ $("#dayBtn").onclick=()=>{
   $("#dIni").oninput=h;box.querySelector("[data-x]").onclick=closeModal;
   $("#dGo").onclick=()=>{const v=$("#dIni").value;if(v)abreDia(v)};$("#dHist").onclick=historico};
 $("#cfgBtn").onclick=configuracoes;
-$("#permOk").onclick=async()=>{if($("#permOk").dataset.modo==="perm"&&pendente){const h=await pegaDir();if(h&&await permissao(h,true)){permBar(false);agendaRodando=false;verificaAgenda();return}}if($("#permOk").dataset.modo==="pasta"){if(await escolhePasta()){$("#permBar").hidden=true;$("#pdfPasta").hidden=false}return}if(!pendente)return;const D=pendente;const r=await salvaNaPasta(D,true);if(r==="ok"){meta.pasta.ultimo=iso(new Date());saveMeta();permBar(false);toast(`Cópia salva na pasta: ${nomePdf(D)}`)}else toast("Sem permissão para gravar na pasta.")};
+$("#permOk").onclick=async()=>{if($("#permOk").dataset.modo==="restaurar"){restauraDaPasta();return}if($("#permOk").dataset.modo==="perm"&&pendente){const h=await pegaDir();if(h&&await permissao(h,true)){permBar(false);agendaRodando=false;verificaAgenda();return}}if($("#permOk").dataset.modo==="pasta"){if(await escolhePasta()){$("#permBar").hidden=true;$("#pdfPasta").hidden=false}return}if(!pendente)return;const D=pendente;const r=await salvaNaPasta(D,true);if(r==="ok"){meta.pasta.ultimo=iso(new Date());saveMeta();permBar(false);toast(`Cópia salva na pasta: ${nomePdf(D)}`)}else toast("Sem permissão para gravar na pasta.")};
 
 function editaListas(){
   openModal(`<header><h3>Efetivo e viaturas</h3><button class="btn primary small" id="lSave">Salvar</button></header><div class="body">
@@ -1247,7 +1296,7 @@ $("#saveChip").onclick=()=>{flush();const h=getJSON("hist",[]);const at=S.atuali
    <dl class="kv"><dt>Situação</dt><dd>${storageOK?"Salvando neste aparelho a cada alteração":"Este navegador não permite salvar. Use o backup."}</dd>
    <dt>Última gravação</dt><dd>${at?at.toLocaleString("pt-BR"):"—"}</dd><dt>Cópias de segurança</dt><dd>${h.length} (uma a cada 10 min com alteração)</dd></dl>
    <div class="row"><button class="btn" id="bkDown">Baixar backup (.json)</button><label class="btn" for="bkFile">Reabrir backup</label><input type="file" id="bkFile" accept=".json,application/json" hidden></div>
-   <button class="btn small" id="bkCopy">Copiar backup como texto</button>
+   <div class="row"><button class="btn small" id="bkCopy">Copiar backup como texto</button><button class="btn small" id="bkTudo">Baixar backup completo (todas as juntadas)</button></div>
    ${h.length?`<h3 style="margin:6px 0 0;font:700 18px var(--f-display)">Voltar para uma versão anterior</h3><div class="hist">${h.map((x,i)=>{const d=new Date(x.t);return `<div class="it"><span><b>${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}</b> · ${esc(x.motivo)}<br><span style="color:var(--muted)">Serviço de ${curto(parseISO(x.inicio))}</span></span><button class="btn small" data-rest="${i}">Restaurar</button></div>`}).join("")}</div>`:""}
    <div class="row" style="justify-content:space-between;margin-top:6px"><button class="btn small" id="snapNow">Criar cópia agora</button><button class="btn danger" id="zeraDia">Zerar este serviço</button></div>
    <span class="hint" id="instHint"></span>
@@ -1256,6 +1305,7 @@ $("#saveChip").onclick=()=>{flush();const h=getJSON("hist",[]);const at=S.atuali
   const nomeArq=`juntada-9gbm-${S.inicio}.json`,todo=()=>JSON.stringify({app:"juntada9gbm",v:1,exportadoEm:new Date().toISOString(),dia:S},null,1);
   $("#bkDown").onclick=()=>{if(inFrame){toast("Nesta prévia o download fica bloqueado. Use “Copiar backup”.");return}baixar(nomeArq,todo());toast("Backup baixado.")};
   $("#bkCopy").onclick=()=>copiar(todo());
+  $("#bkTudo").onclick=async()=>{if(inFrame){toast("Nesta prévia o download fica bloqueado.");return}const j=await montaBackup();baixarBlob(new Blob([JSON.stringify(j)],{type:"application/json"}),`backup-juntada-${iso(new Date())}.json`);toast("Backup completo baixado.")};
   $("#bkFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);const d=j.dia||j;if(!d||!d.inicio||!Array.isArray(d.vtrs))throw 0;
       exigeSenha("Reabrir um backup substitui dados do serviço.",()=>ask(`Reabrir o backup do serviço de ${curto(parseISO(d.inicio))}? ${d.inicio===S.inicio?"Ele substitui o que está aberto agora (uma cópia fica no histórico).":""}`,"Reabrir",()=>{snapshot("Antes de reabrir backup");S=Object.assign(blank(d.inicio),d);LS.set("atual",S.inicio);dirty=true;flush();toast("Backup reaberto.")}))}catch(x){toast("Arquivo não reconhecido como backup da juntada.")}};rd.readAsText(f)};
   $("#snapNow").onclick=()=>{snapshot("Cópia manual");closeModal();toast("Cópia criada.")};
@@ -1338,6 +1388,11 @@ function configuracoes(){flush();const t=temaAtual(),lib=liberado(),dis=lib?"":"
      <div class="grid"><div class="f"><label for="cfHora">Horário da cópia</label><input class="in" type="time" id="cfHora" value="${esc(meta.pasta.hora)}" ${dis}></div>
       <div class="f" style="justify-content:flex-end"><button class="btn ${meta.pasta.ativo?"danger":""}" id="cfAtivo" ${dis}>${meta.pasta.ativo?"Desligar cópia diária":"Religar cópia diária"}</button></div></div>`
      :`<p class="note">${inFrame?"Nesta prévia o acesso a pastas fica bloqueado. No app instalado no Chrome ou Edge do computador essa opção aparece aqui.":"Este navegador não permite escolher uma pasta. Funciona no Chrome ou Edge do computador (Windows). No celular, use “Compartilhar PDF” na guia Folhas."}</p>`}</div>
+    <div class="sub"><b>Backup dos dados</b>
+     <p class="hint" style="margin:0">Cópia completa (juntadas, efetivo, viaturas, configurações) na subpasta <b>_backup</b> da pasta de cópias. Atualiza sozinha a cada 30 min quando há mudança; guarda os últimos 30 dias.</p>
+     ${fsaOK()?`<dl class="kv"><dt>Último backup</dt><dd>${meta.pasta.bkAt?esc(new Date(meta.pasta.bkAt).toLocaleString("pt-BR"))+` · ${meta.pasta.bkDias||0} juntadas`:"—"}</dd></dl>
+     <div class="row"><button class="btn" id="cfBk" ${meta.pasta.nome?"":"disabled"}>Fazer backup agora</button><button class="btn" id="cfRest">Restaurar da pasta</button></div>`:""}
+     <div class="row"><label class="btn small" for="cfRestArq">Restaurar de um arquivo .json</label><input type="file" id="cfRestArq" accept=".json,application/json" hidden></div></div>
     <div class="sub"><b>Serviço</b><div class="f"><label for="cfTroca">Horário da troca de serviço</label><input class="in" type="time" id="cfTroca" value="${esc(meta.troca)}" ${dis}><span class="hint">Define a ordem cronológica da ronda e a data de cada saída no Min a Min.</span></div></div>
     <div class="row"><button class="btn" id="cfListas">Efetivo e viaturas (${efetivo().length} militares · ${viaturas().length} VTRs)</button><button class="btn" id="cfSenha">Trocar senha</button></div></div>
    ${deferredInstall?`<button class="btn primary" id="cfInst">Instalar o aplicativo</button>`:""}
@@ -1350,6 +1405,13 @@ function configuracoes(){flush();const t=temaAtual(),lib=liberado(),dis=lib?"":"
   $("#cfSemFoto").onclick=async()=>{try{await IDB.del("cfg","foto")}catch(e){}aplicaFoto();toast("Fundo do tema restaurado.")};
   $("#cfTroca").onchange=e=>{meta.troca=e.target.value||"08:00";saveMeta();toast("Horário da troca alterado.")};
   $("#cfListas").onclick=()=>exigeSenha("Alterar o efetivo e as viaturas.",editaListas);
+  if($("#cfBk"))$("#cfBk").onclick=async()=>{let r=await fazBackup(true);
+    if(r==="menor"||r==="vazio"){ask(`O último backup da pasta tem ${meta.pasta.bkMenor||"mais"} juntadas e este aparelho tem menos. Gravar mesmo assim? (os backups dos dias anteriores continuam na pasta)`,"Gravar",async()=>{const r2=await fazBackup(true,true);toast(r2==="ok"?"Backup gravado na pasta.":"Não foi possível gravar o backup.")});return}
+    toast(r==="ok"?"Backup gravado na pasta.":r==="sem-permissao"?"Sem permissão para gravar na pasta.":"Não foi possível gravar o backup.");if(r==="ok")configuracoes()};
+  if($("#cfRest"))$("#cfRest").onclick=restauraDaPasta;
+  $("#cfRestArq").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{let j;try{j=JSON.parse(t)}catch(x){toast("Arquivo não reconhecido.");return}
+    if(j.tipo!=="backup-completo"){toast("Esse arquivo é o backup de um serviço só. Use “Reabrir backup” no selo de salvamento.");return}
+    exigeSenha("Restaurar substitui os dados deste aparelho.",()=>ask(`Restaurar ${j.dias.length} juntada${j.dias.length===1?"":"s"} gravada${j.dias.length===1?"":"s"} em ${new Date(j.criadoEm).toLocaleString("pt-BR")}?`,"Restaurar",async()=>{try{const n=await aplicaBackup(j);toast(`${n} juntada${n===1?"":"s"} restaurada${n===1?"":"s"}. Reabrindo…`);setTimeout(()=>location.reload(),900)}catch(x){toast("Não foi possível restaurar esse arquivo.")}}))})};
   $("#cfSenha").onclick=trocaSenha;
   if($("#cfInst"))$("#cfInst").onclick=()=>{deferredInstall.prompt();deferredInstall=null;closeModal()};
   if(fsaOK()){$("#cfHora").onchange=e=>{meta.pasta.hora=e.target.value||"08:00";meta.pasta.ultimo="";saveMeta();toast("Horário da cópia alterado.")};
@@ -1451,7 +1513,9 @@ else if(inFrame&&!diasSalvos().length){carregaExemplo()}
 else loadDia(defaultInicio());
 fillLists();lastSaved=S.atualizadoEm?new Date(S.atualizadoEm):null;aplicaTema(temaAtual());go(view||(guVazia()?"gu":"vtr"));
 setTimeout(()=>{migraEArquiva();verificaAgenda();pastaBar();pegaDir().then(h=>{$("#pdfPasta").hidden=!(h&&fsaOK())})},1500);
-setInterval(verificaAgenda,60*1000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verificaAgenda()});
+setInterval(()=>{verificaAgenda();backupAuto()},60*1000);setTimeout(backupAuto,4000);
+setTimeout(async()=>{if(!fsaOK()||meta.exemplo)return;if((await todosDias()).some(temDados))return;const b=$("#permBar");if(!b.hidden)return;
+  b.hidden=false;b.dataset.modo="restaurar";$("#permTxt").textContent="App vazio neste navegador. Se já usava antes, restaure o backup da pasta de cópias.";$("#permOk").textContent="Restaurar backup";$("#permOk").dataset.modo="restaurar"},2500);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verificaAgenda()});
 })();
 </script>
 
