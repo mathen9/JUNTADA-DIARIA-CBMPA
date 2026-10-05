@@ -21,6 +21,17 @@ COMO INSTALAR NO CELULAR
 - Android (Chrome): abra o endereço > menu ⋮ > "Instalar aplicativo" (ou "Adicionar à tela inicial").
 - iPhone (Safari): abra o endereço > botão Compartilhar > "Adicionar à Tela de Início".
 
+CHEGADA SIMULTÂNEA
+- Guia Militares e civis > Chegada simultânea.
+- Um horário, origem, cidade, destino e motivo valem para o grupo.
+- Cada nome vira uma linha na folha oficial.
+- Saída do grupo grava o mesmo horário; a saída de uma pessoa pode ser corrigida depois.
+- Copiar para o Minuto a Minuto gera o texto do WhatsApp sem criar outro lançamento.
+
+TEMAS DO SERVIÇO
+- Na mesma guia, ou em Engrenagem: Documento, Guarda (escuro, melhor à noite) e Moderno.
+- A folha impressa não muda com o tema.
+
 IMPRIMIR AS FOLHAS
 - Guia "Folhas" > marque as folhas > "Imprimir / salvar PDF".
 - Escolha a impressora ou "Salvar como PDF", papel A4, orientação paisagem.
