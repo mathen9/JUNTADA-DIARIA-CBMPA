@@ -1,17 +1,32 @@
 {
+  "id": "./",
   "name": "Juntada 9º GBM Altamira",
-  "short_name": "Juntada",
-  "description": "Lançamento da juntada diária do 9º GBM: saídas de viatura, minuto a minuto, militares e civis, mapa de ronda e impressão das folhas.",
+  "short_name": "Juntada 9º GBM",
+  "description": "Juntada diária do 9º GBM: saídas de viatura, minuto a minuto, militares e civis, mapa de ronda e impressão das 3 folhas oficiais.",
   "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#07080c",
-  "theme_color": "#07080c",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f3f5f9",
+  "theme_color": "#b3141c",
+  "categories": ["productivity", "utilities"],
+  "launch_handler": {"client_mode": "focus-existing"},
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
     {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Nova saída de viatura", "short_name": "Nova saída", "url": "./#vtr", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Militares e civis", "short_name": "Pessoas", "url": "./#pes", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Folhas para imprimir", "short_name": "Folhas", "url": "./#fol", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]}
+  ],
+  "screenshots": [
+    {"src": "screenshots/tela-larga-1.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Saídas de viatura da juntada"},
+    {"src": "screenshots/tela-larga-2.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Militares e civis, em tema escuro"},
+    {"src": "screenshots/tela-estreita-1.png", "sizes": "750x1334", "type": "image/png", "form_factor": "narrow", "label": "Versão para celular"}
   ]
 }

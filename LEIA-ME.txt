@@ -1,75 +1,65 @@
-JUNTADA 9º GBM ALTAMIRA — APLICATIVO (PWA)
+JUNTADA 9º GBM ALTAMIRA — APLICATIVO PARA O COMPUTADOR DA GUARDA (versão 2.0.0)
 
 O QUE É
-Um aplicativo que roda no navegador do celular e pode ser instalado na tela inicial.
-Os dados ficam salvos no próprio celular. Funciona sem internet depois da primeira abertura.
+Programa que roda no navegador do Windows e pode ser INSTALADO como aplicativo (janela própria,
+ícone no menu Iniciar, na barra de tarefas e na área de trabalho). Os dados ficam só neste computador.
+Funciona sem internet depois da primeira abertura.
 
-COMO COLOCAR NO AR (escolha um, todos gratuitos)
+NAVEGADORES NO WINDOWS
+- Microsoft Edge e Google Chrome (recomendados): tudo funciona, inclusive instalar e a pasta automática.
+- Opera, Brave, Vivaldi (base Chrome): tudo funciona; a instalação pode variar.
+- Mozilla Firefox: funciona dentro do navegador, mas NÃO instala como aplicativo e NÃO escolhe pasta
+  automática. O aplicativo avisa todo dia para baixar o PDF e o backup (vão para Downloads).
 
-1) Netlify Drop (mais fácil, 2 minutos)
-   - No computador, abra https://app.netlify.com/drop
-   - Arraste esta pasta inteira (juntada9gbm-pwa) para a página.
-   - Ele gera um endereço https://...netlify.app. Crie uma conta grátis para o endereço não expirar.
+PRIMEIRO ACESSO (o aplicativo guia sozinho, em 4 passos)
+1) Verifica o computador (navegador, salvamento, offline, pasta, instalação).
+2) Oferece a INSTALAÇÃO. Na janelinha do navegador marque "Fixar na barra de tarefas" e
+   "Criar atalho na Área de Trabalho" (o Edge mostra essas caixas; no Chrome, depois de instalar,
+   Iniciar > botão direito no app > Mais > Abrir local do arquivo > Enviar para > Área de trabalho).
+3) Cria a PASTA DO APLICATIVO. Você escolhe um lugar (uma pasta dentro de Documentos, por exemplo;
+   o Windows não deixa escolher "Documentos" direto) e o aplicativo cria dentro dela:
+       Juntada 9GBM\
+         PDF das Juntadas\AAAA-MM\   as 3 folhas (PDF) de cada serviço
+         Backups\                    cópia completa dos dados
+         LEIA-ME.txt
+   Quando o navegador pedir, escolha "Editar arquivos" e "Permitir em todas as visitas".
+4) Escolha o canto da tela (esquerda ou direita). O aplicativo abre com pouco menos da metade da
+   tela e deixa o resto livre. Se a janela não se ajustar sozinha, arraste e redimensione uma vez:
+   o Windows lembra. (Configurações > Este computador também tem os botões de ajustar.)
+Se fechar o assistente, ele volta no dia seguinte. Também fica em Configurações > Este computador.
 
-2) GitHub Pages
-   - Crie um repositório, envie os arquivos desta pasta, vá em Settings > Pages e publique a branch main.
+ABRIR SOZINHO QUANDO LIGAR O COMPUTADOR (opcional)
+Win + R > digite shell:startup > Enter > copie o atalho do aplicativo para essa pasta.
 
-3) Cloudflare Pages
-   - Em pages.cloudflare.com, "Upload assets" e envie esta pasta.
+SALVAR O PDF TODO DIA
+- Na troca de serviço (horário em Configurações > Arquivos, padrão 08:00) o aplicativo salva sozinho
+  as 3 folhas em PDF do serviço que terminou, na pasta PDF das Juntadas\AAAA-MM.
+- Precisa estar aberto nesse horário; se estiver fechado, salva assim que for aberto (recupera até 7 dias).
+- Se alguém alterar um serviço já salvo (ex.: BO lançado depois), o PDF é regravado.
 
-COMO INSTALAR NO CELULAR
-- Android (Chrome): abra o endereço > menu ⋮ > "Instalar aplicativo" (ou "Adicionar à tela inicial").
-- iPhone (Safari): abra o endereço > botão Compartilhar > "Adicionar à Tela de Início".
+BACKUP
+- Automático na pasta Backups: a cada 30 min com alteração; guarda os últimos 30 dias.
+- Restaurar: Configurações > Arquivos > Restaurar da pasta (ou de um arquivo .json). Pede a senha.
+- O backup automático nunca grava por cima de um backup com mais juntadas sem confirmação.
+- Dica: deixe a pasta dentro do OneDrive/Google Drive para ter também uma cópia fora do computador.
 
-CHEGADA SIMULTÂNEA
-- Guia Militares e civis > Chegada simultânea.
-- Um horário, origem, cidade, destino e motivo valem para o grupo.
-- Cada nome vira uma linha na folha oficial.
-- Saída do grupo grava o mesmo horário; a saída de uma pessoa pode ser corrigida depois.
-- Copiar para o Minuto a Minuto gera o texto do WhatsApp sem criar outro lançamento.
+TEMAS E APARÊNCIA
+- Só se troca em Configurações > Aparência: Automático (segue o Windows), CBMPA oficial, Noite,
+  Alto contraste, Documento e os temas com imagem/animação. "Efeitos animados" desliga as animações.
 
-TEMAS DO SERVIÇO
-- Na mesma guia, ou em Engrenagem: Documento, Guarda (escuro, melhor à noite) e Moderno.
-- A folha impressa não muda com o tema.
+ATALHOS DO TECLADO (F1 mostra a lista)
+Alt+1…6 guias · Alt+N novo lançamento · Ctrl+P imprimir folhas · Ctrl+S salvar e fazer backup ·
+Alt+C configurações.
 
-IMPRIMIR AS FOLHAS
-- Guia "Folhas" > marque as folhas > "Imprimir / salvar PDF".
-- Escolha a impressora ou "Salvar como PDF", papel A4, orientação paisagem.
-
-SALVAMENTO
-- Grava no celular a cada alteração (o selo "Salvo HH:MM" no topo mostra a última gravação).
-- Guarda uma cópia de segurança a cada 10 minutos com alteração e antes de qualquer exclusão (até 40 versões).
-- Toque no selo "Salvo" para baixar o backup (.json), reabrir um backup ou voltar a uma versão anterior.
-
-ATUALIZAR O APP
-- Substitua os arquivos no mesmo endereço. Se mudar o sw.js, troque "juntada-v1" por "juntada-v2".
-- Os dados salvos no celular continuam, porque ficam ligados ao endereço do site.
-  Por isso, não troque de endereço depois de começar a usar (ou faça o backup antes).
-
-CÓPIA DIÁRIA DO PDF NUMA PASTA (computador com Chrome ou Edge)
-- Instale o app pelo Chrome/Edge do computador da guarda.
-- Engrenagem > "Cópia diária do PDF numa pasta" > Escolher pasta > permitir.
-- Quando o navegador perguntar, escolha "Permitir em todas as visitas" para não pedir de novo.
-- No horário escolhido (padrão 08:00) o app salva o PDF do serviço que terminou em
-  PASTA/AAAA-MM/Juntada 9GBM DD-MM-AAAA a DD-MM-AAAA.pdf
-- O app precisa estar aberto nesse horário. Se estiver fechado, ele salva quando for aberto.
-- No celular Android isso não existe; use "Compartilhar PDF" na guia Folhas.
+IMPRIMIR
+Guia "Folhas": marque as folhas > Imprimir (A4 paisagem; escolha a impressora ou "Salvar como PDF").
 
 SENHA
-- Senha inicial: 0000. Troque em Engrenagem > Trocar senha.
-- Protege: efetivo e viaturas, guarnição de cada viatura, cópia diária (desligar, trocar pasta, horário),
-  horário da troca de serviço, zerar serviço, restaurar versões e reabrir backup.
-- Depois de digitar a senha, essas áreas ficam liberadas por 5 minutos.
+- Inicial: 0000. Troque em Configurações > Serviço.
+- Protege: efetivo e viaturas, guarnição por viatura, pasta e cópia diária, horário da troca,
+  zerar serviço, restaurar versões e backups. Depois de digitar, fica liberado por 5 minutos.
 
-BACKUP AUTOMÁTICO DOS DADOS (computador com Chrome ou Edge)
-- Na mesma pasta das cópias, o app cria a subpasta _backup com:
-  backup-juntada-ULTIMO.json  (sempre a cópia mais recente)
-  backup-juntada-AAAA-MM-DD.json  (uma por dia, guarda os últimos 30 dias)
-- Atualiza sozinho a cada 30 minutos quando há mudança.
-- Contém tudo: juntadas, efetivo, viaturas, guarnição de cada viatura, senha e configurações.
-- Se o navegador for limpo ou o computador trocado: abra o app, toque em "Restaurar backup"
-  na faixa amarela (ou Engrenagem > Restaurar da pasta), escolha a pasta de cópias e a data.
-- Proteção: o backup automático nunca grava por cima de um backup maior (com mais juntadas)
-  sem confirmação. Assim, um app vazio não apaga o backup bom.
-- Dica: deixe a pasta de cópias dentro do OneDrive/Google Drive do computador para ter
-  também uma cópia fora da máquina.
+COMO COLOCAR NO AR (quem publica o aplicativo)
+Envie o conteúdo de dist/ para o MESMO endereço de sempre (GitHub Pages, Netlify, Cloudflare Pages).
+Não troque de endereço depois de começar a usar: os dados ficam ligados ao endereço.
+Ao publicar mudança, aumente VERSAO em sw.js (juntada-v15 -> juntada-v16).
