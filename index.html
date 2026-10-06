@@ -721,7 +721,7 @@ const LS={get(k){try{return localStorage.getItem(P+k)}catch(e){return null}},
 const getJSON=(k,d)=>{try{const v=LS.get(k);return v?JSON.parse(v):d}catch(e){return d}};
 let storageOK=LS.set("probe","1");
 
-const meta=Object.assign({nomes:[],tipos:[],troca:"08:00",exemplo:false,efetivo:null,viaturas:null},getJSON("meta",{}));
+const meta=Object.assign({nomes:[],tipos:[],troca:"09:00",exemplo:false,efetivo:null,viaturas:null},getJSON("meta",{}));
 if(meta.viaturas){["ATT-02","AR-151"].forEach(v=>{if(!meta.viaturas.includes(v))meta.viaturas.push(v)})}
 const efetivo=()=>meta.efetivo||EFETIVO_PADRAO, viaturas=()=>meta.viaturas||VTRS_PADRAO;
 const vtrGu=v=>Object.assign({},VTR_GU_PADRAO,meta.vtrGu||{})[String(v||"").toUpperCase().replace(/\s+/g,"").replace(/^([A-Z]+)-?(\d+)$/,"$1-$2")]||"";
@@ -732,7 +732,7 @@ const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const toMin=hm=>{if(!/^\d{1,2}:\d{2}$/.test(hm||""))return null;const [h,m]=hm.split(":").map(Number);return h*60+m};
-function defaultInicio(){const n=new Date();const t=toMin(meta.troca)??480;return iso((n.getHours()*60+n.getMinutes())<t?addDays(n,-1):n)}
+function defaultInicio(){const n=new Date();const t=toMin(meta.troca)??540;return iso((n.getHours()*60+n.getMinutes())<t?addDays(n,-1):n)}
 function tituloServico(ini){
   const a=parseISO(ini),b=addDays(a,1);
   const A=`${a.getDate()} DE ${MESES[a.getMonth()].toUpperCase()}`, B=`${b.getDate()} DE ${MESES[b.getMonth()].toUpperCase()}`;
@@ -744,7 +744,7 @@ function tituloServico(ini){
 const localData=ini=>{const b=addDays(parseISO(ini),1);return `Quartel em Altamira, ${b.getDate()} de ${MESES[b.getMonth()]} de ${b.getFullYear()}`};
 const curto=d=>`${DIAS_C[d.getDay()]} ${d.getDate()}/${pad(d.getMonth()+1)}`;
 /* data real de um horário dentro do serviço (antes da troca = dia seguinte) */
-function dataDoHorario(ini,hm){const t=toMin(hm);const a=parseISO(ini);const troca=toMin(meta.troca)??480;const d=(t!==null&&t<troca)?addDays(a,1):a;return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()}
+function dataDoHorario(ini,hm){const t=toMin(hm);const a=parseISO(ini);const troca=toMin(meta.troca)??540;const d=(t!==null&&t<troca)?addDays(a,1):a;return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()}
 
 /* ---------- coordenadas ---------- */
 function dms(v,lat){const h=lat?(v<0?"S":"N"):(v<0?"W":"E");v=Math.abs(v);let d=Math.floor(v),m=Math.floor((v-d)*60),s=Math.round(((v-d)*60-m)*600)/10;if(s>=60){s=0;m++}if(m>=60){m=0;d++}return `${d}°${pad(m)}'${s.toFixed(1).padStart(4,"0")}"${h}`}
@@ -1003,7 +1003,7 @@ function editor(kind,id){
   let r=cfg.arr.find(x=>x.id===id),novo=false;
   if(!r){r={id:uid(),criado:Date.now()};if(kind==="vtr"){r.saida=nowHM();r.sentinela=sentinelaEm(r.saida);r._sentAuto=true}
     if(kind==="pes"){r.entrada=nowHM();r.sentinela=sentinelaEm(r.entrada);r._sentAuto=true}
-    if(kind==="ron"){const o=ordena(S.ronda,"inicio"),u=o[o.length-1];if(u&&toMin(u.termino)!==null){const a=toMin(u.inicio),b=toMin(u.termino);const d=a===null?60:((b-a)%1440+1440)%1440||60;r.inicio=u.termino;r.termino=fmtHM(b+d);r.rondante=u.rondante||""}}
+    if(kind==="ron"){const o=ordenaRonda(S.ronda),u=o[o.length-1];if(u&&toMin(u.termino)!==null){const a=toMin(u.inicio),b=toMin(u.termino);const d=a===null?60:((b-a)%1440+1440)%1440||60;r.inicio=u.termino;r.termino=fmtHM(b+d);r.rondante=u.rondante||""}}
     cfg.arr.push(r);novo=true;touch()}
   const G=kind==="vtr"?grupo(r):[];
   const corpo=kind!=="vtr"?`<div class="grid">${cfg.F.map(f=>fieldHTML(f,r)).join("")}</div>`
@@ -1060,7 +1060,12 @@ function editor(kind,id){
 }
 
 /* ---------- render: viaturas ---------- */
-const ordena=(arr,k)=>[...arr].sort((a,b)=>{const ta=toMin(a[k]),tb=toMin(b[k]);const tr=toMin(meta.troca)??480;const f=t=>t===null?9999:(t<tr?t+1440:t);return f(ta)-f(tb)||a.criado-b.criado});
+const ordena=(arr,k)=>[...arr].sort((a,b)=>{const ta=toMin(a[k]),tb=toMin(b[k]);const tr=toMin(meta.troca)??540;const f=t=>t===null?9999:(t<tr?t+1440:t);return f(ta)-f(tb)||a.criado-b.criado});
+const ordenaRonda=arr=>{const L=[...arr];const ini=L.map(r=>toMin(r.inicio)),fim=new Set(L.map(r=>toMin(r.termino)));
+  const comeco=L.filter((r,i)=>ini[i]!==null&&!fim.has(ini[i])).sort((a,b)=>(a.turno||1)-(b.turno||1)||(a.criado||0)-(b.criado||0))[0];
+  let p=comeco?toMin(comeco.inicio):null;if(p===null){const g=S.gen&&S.gen.t&&toMin(S.gen.t[0].ini);p=g!=null&&g!==false?g:(toMin(meta.troca)??540)}
+  const f=r=>{const t=toMin(r.inicio);return t===null?9999:((t-p)%1440+1440)%1440};
+  return L.sort((a,b)=>f(a)-f(b)||(a.criado||0)-(b.criado||0))};
 function renderVtr(){const L=$("#vtrList");const arr=ordena(S.vtrs,"saida");
   const abertas=S.vtrs.filter(r=>r.saida&&!r.chegada).length;const b=$("#bVtr");b.hidden=!abertas;b.textContent=abertas;
   if(!arr.length){L.innerHTML=`<div class="empty"><b>Nenhuma saída lançada</b>Toque em “Nova saída” quando a viatura sair. Horário de saída já vem preenchido.</div>`;return}
@@ -1184,7 +1189,7 @@ function renderPes(){const L=$("#pesList");let arr=ordena(S.pessoas,"entrada");i
 $("#pesQ").addEventListener("input",e=>{pesQ=e.target.value;renderPes()});
 
 /* ---------- ronda ---------- */
-function renderRon(){if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest("#turnos"))renderGen();const L=$("#ronList");const arr=ordena(S.ronda,"inicio");
+function renderRon(){if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest("#turnos"))renderGen();const L=$("#ronList");const arr=ordenaRonda(S.ronda);
   if(!arr.length){L.innerHTML=`<div class="empty"><b>Sem quartos definidos</b>Use “Dividir os quartos” acima ou adicione um por um.</div>`;return}
   L.innerHTML=`<div class="panel" style="padding:4px 10px"><table class="rtable"><tbody>${arr.map(r=>`<tr data-id="${r.id}"><td class="h">${esc(r.inicio||"--:--")}–${esc(r.termino||"--:--")}</td>
     <td><b>${esc(r.sentinela||"—")}</b>${gen().turnos>1&&r.turno?`<span class="ttag">${r.turno}º T</span>`:""}${r.rondante?`<br><span style="color:var(--muted);font-size:14px">Rondante: ${esc(r.rondante)}</span>`:""}</td></tr>`).join("")}</tbody></table></div>
@@ -1253,7 +1258,7 @@ function folha2(){const arr=ordena(S.pessoas,"entrada");const rows=arr.map(r=>`<
   return `<section class="sheet">${cabecalho("CONTROLE DE ENTRADA E SAÍDA DE MILITARES E CIVIS")}<table class="sh-t">${cols([8.5,19.7,24.3,11.8,12.6,8.6,14.5])}
   <thead><tr><th rowspan="2">NOME</th><th rowspan="2">Nº DOCUMENTO</th><th rowspan="2">ÓRGÃO EXPEDIDOR</th><th rowspan="2">DESTINO</th><th colspan="2">HORÁRIOS</th><th rowspan="2">SENTINELA</th></tr>
   <tr><th>ENTRADA</th><th>SAÍDA</th></tr></thead><tbody>${rows.join("")}</tbody></table>${rodape()}</section>`}
-function folha3(){const rows=ordena(S.ronda,"inicio").map(r=>`<tr>${cel(r.inicio)}${cel(r.termino)}${cel(r.sentinela)}<td>${esc((r.obsSent||"").toUpperCase())}</td><td></td>${cel(r.rondante)}<td>${esc((r.obsRond||"").toUpperCase())}</td><td></td></tr>`);
+function folha3(){const rows=ordenaRonda(S.ronda).map(r=>`<tr>${cel(r.inicio)}${cel(r.termino)}${cel(r.sentinela)}<td>${esc((r.obsSent||"").toUpperCase())}</td><td></td>${cel(r.rondante)}<td>${esc((r.obsRond||"").toUpperCase())}</td><td></td></tr>`);
   if(!rows.length)rows.push(`<tr>${cel("").repeat(8)}</tr>`);
   return `<section class="sheet">${cabecalho("MAPA DE RONDA")}<table class="sh-t ronda">${cols([5,7.1,10.4,12.2,21.2,10.4,12.2,21.5])}
   <thead><tr><th colspan="2">HORÁRIO</th><th rowspan="2">SENTINELA</th><th rowspan="2">OBSERVAÇÃO</th><th rowspan="2">ASSINATURA SENTINELA</th><th rowspan="2">RONDANTE</th><th rowspan="2">OBSERVAÇÃO</th><th rowspan="2">ASSINATURA/ RONDANTE</th></tr>
@@ -1805,7 +1810,7 @@ function configuracoes(aba){if(typeof aba==="string")cfgAba=aba;flush();const t=
   if($("#cfFoto"))$("#cfFoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const bmp=await createImageBitmap(f);const s=Math.min(1,1600/Math.max(bmp.width,bmp.height));const c=document.createElement("canvas");c.width=bmp.width*s|0;c.height=bmp.height*s|0;c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
     const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.82));await IDB.put("cfg",blob,"foto");aplicaFoto();toast("Foto de fundo aplicada.")}catch(x){toast("Não foi possível usar essa imagem.")}};
   on("#cfSemFoto",async()=>{try{await IDB.del("cfg","foto")}catch(e){}aplicaFoto();toast("Fundo do tema restaurado.")});
-  if($("#cfTroca"))$("#cfTroca").onchange=e=>{meta.troca=e.target.value||"08:00";saveMeta();toast("Horário da troca alterado.")};
+  if($("#cfTroca"))$("#cfTroca").onchange=e=>{meta.troca=e.target.value||"09:00";saveMeta();toast("Horário da troca alterado.")};
   on("#cfListas",()=>exigeSenha("Alterar o efetivo e as viaturas.",editaListas));
   on("#cfSenha",trocaSenha);
   on("#cfBk",async()=>{let r=await fazBackup(true);
